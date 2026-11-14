@@ -1,0 +1,43 @@
+name: Update Wikimedia's filters
+
+# Like docker-wikibase's update-wmf-branch.yml: once a week, copy
+# Wikimedia's template and filters again (wmf/update.sh) and open a
+# pull request if any of them changed.
+on:
+  schedule:
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Copy Wikimedia's files
+        id: update
+        run: |
+          wmf/update.sh
+          # SOURCE names the newest commit every week. Keep the old one
+          # unless a copied file changed.
+          if git diff --quiet -- wmf ':!wmf/SOURCE'; then
+            git checkout -- wmf/SOURCE
+          fi
+          echo "commit=$(sed -n 's/^swh:1:rev:\([0-9a-f]*\);.*/\1/p' wmf/SOURCE)" >> "$GITHUB_OUTPUT"
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: update/wmf
+          delete-branch: true
+          commit-message: "Update Wikimedia's filters to ${{ steps.update.outputs.commit }}"
+          title: "Update Wikimedia's filters to ${{ steps.update.outputs.commit }}"
+          body: |
+            Copies of Wikimedia's index template and filters from operations/puppet [`${{ steps.update.outputs.commit }}`](https://github.com/wikimedia/operations-puppet/commit/${{ steps.update.outputs.commit }}), made by `wmf/update.sh` in the [weekly workflow](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).
+
+            Review the diff before merging: the files go into the pipeline unchanged.

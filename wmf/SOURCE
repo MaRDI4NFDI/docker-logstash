@@ -1,0 +1,7 @@
+swh:1:rev:710319f83f950bb4dad79ecb282be9db31e11e60;origin=https://github.com/wikimedia/operations-puppet
+swh:1:cnt:aaea95088694628d395383c146475493e6957ab3;origin=https://github.com/wikimedia/operations-puppet;anchor=swh:1:rev:710319f83f950bb4dad79ecb282be9db31e11e60;path=/modules/profile/files/logstash/templates/logstash_7.0-1.json
+swh:1:cnt:07fb8f67f871bbde176c44322b9f844ef3bc1c2e;origin=https://github.com/wikimedia/operations-puppet;anchor=swh:1:rev:710319f83f950bb4dad79ecb282be9db31e11e60;path=/modules/profile/files/logstash/filters/50-filter_mediawiki.conf
+swh:1:cnt:a01bebd448383257be5c8e793f220c1ae5bf9f3c;origin=https://github.com/wikimedia/operations-puppet;anchor=swh:1:rev:710319f83f950bb4dad79ecb282be9db31e11e60;path=/modules/profile/files/logstash/filters/70-filter_add_normalized_message.conf
+swh:1:cnt:7fcd2d7e823c2e0a6b96336f377b5f7f9686c412;origin=https://github.com/wikimedia/operations-puppet;anchor=swh:1:rev:710319f83f950bb4dad79ecb282be9db31e11e60;path=/modules/profile/files/logstash/filters/70-filter_normalize_log_levels.conf
+swh:1:cnt:d40830a2591d1366cc4b34f8dc26cc0ad5c05a98;origin=https://github.com/wikimedia/operations-puppet;anchor=swh:1:rev:710319f83f950bb4dad79ecb282be9db31e11e60;path=/modules/profile/files/logstash/filters/75-filter_throttle.conf
+swh:1:cnt:e5a678d296ecab48782bd7127b13ecd6615b1f3d;origin=https://github.com/wikimedia/operations-puppet;anchor=swh:1:rev:710319f83f950bb4dad79ecb282be9db31e11e60;path=/modules/profile/files/logstash/filters/80-filter_truncate.conf
