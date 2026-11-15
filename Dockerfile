@@ -1,4 +1,4 @@
-FROM alpine:3.22 AS template
+FROM alpine:3.24 AS template
 RUN apk add --no-cache jq
 COPY wmf/logstash_7.0-1.json template.jq /
 RUN jq -f /template.jq /logstash_7.0-1.json > /logstash.json
