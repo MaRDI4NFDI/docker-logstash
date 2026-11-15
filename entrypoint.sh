@@ -55,4 +55,29 @@ until curl -sf "$os/_cluster/health?wait_for_status=yellow&timeout=10s" >/dev/nu
 done
 echo
 
+# (Re)load the MediaWiki dashboards from the image into DASHBOARDS_URL
+# in the background, so they never depend on what the volume holds.
+# Changes made in the UI to these objects are lost on the next start.
+# An empty DASHBOARDS_URL skips this.
+dashboards=${DASHBOARDS_URL-http://logstash-dashboards:5601}
+import_dashboards() {
+	d=$dashboards
+	xsrf='osd-xsrf: true'
+	for _ in $(seq 60); do
+		if curl -sf "$d/api/status" >/dev/null &&
+			curl -sf -XPOST "$d/api/saved_objects/_import?overwrite=true" -H "$xsrf" \
+				-F file=@/usr/share/logstash/dashboards/mediawiki.ndjson | grep -q '"success":true' &&
+			curl -sf -XPOST "$d/api/opensearch-dashboards/settings" -H "$xsrf" -H "$json" \
+				-d '{"changes":{"defaultIndex":"logstash","defaultRoute":"/app/dashboards#/view/home"}}' >/dev/null; then
+			echo "Loaded the dashboards into $d"
+			return
+		fi
+		sleep 10
+	done
+	echo "Could not load the dashboards into $d" >&2
+}
+if [ -n "$dashboards" ]; then
+	import_dashboards &
+fi
+
 exec /usr/local/bin/docker-entrypoint "$@"
