@@ -16,6 +16,7 @@ ENV PIPELINE_ECS_COMPATIBILITY=disabled
 RUN rm pipeline/logstash.conf
 COPY pipeline/ wmf/*.conf pipeline/
 COPY --from=template /logstash.json template/logstash.json
+COPY dashboards/ dashboards/
 COPY entrypoint.sh /usr/local/bin/mardi-entrypoint
 
 ENTRYPOINT ["/usr/local/bin/mardi-entrypoint"]

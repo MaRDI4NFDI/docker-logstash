@@ -36,6 +36,10 @@ MediaWiki ──UDP 11514──► logstash ──► OpenSearch (OPENSEARCH_URL
   `logstash-retention` before Logstash starts. It deletes an index
   `RETENTION_DAYS` (default 90) days after its creation. A changed
   value applies to indices created afterwards.
+- The entrypoint also loads `dashboards/mediawiki.ndjson` into
+  OpenSearch Dashboards at `DASHBOARDS_URL` (default
+  `http://logstash-dashboards:5601`; empty to skip) on every start
+  (see [Dashboards](#dashboards)).
 
 Logstash keeps no state: its queue is in memory, and all records live
 in OpenSearch.
@@ -64,6 +68,38 @@ The kernel counts dropped records as `RcvbufErrors` in the pod:
 
 ```bash
 kubectl -n production exec deploy/logstash -- grep '^Udp:' /proc/net/snmp
+```
+
+## Dashboards
+
+`dashboards/mediawiki.ndjson` rebuilds the MediaWiki dashboards that
+Wikimedia describes on Wikitech
+([Monitor production errors](https://wikitech.wikimedia.org/wiki/MediaWiki_Engineering/Guides/Monitor_production_errors),
+[OpenSearch Dashboards](https://wikitech.wikimedia.org/wiki/OpenSearch_Dashboards)).
+Wikimedia's own definitions are not public, so names and purpose
+follow those pages, and the panels are ours:
+
+- **Home** (the start page): links and example searches.
+- **mediawiki-errors**: runtime warnings, fatal errors and uncaught
+  exceptions, i.e. the channels `exception`, `error` and `fatal` plus
+  anything at `ERROR` or above. Events over time by level, top
+  `exception.file`, `normalized_message` and `exception.class`, and
+  the records.
+- **mediawiki-new-errors**: the same, minus errors already reported in
+  Phabricator. As at Wikimedia, add a "Filter out value" on
+  `exception.file` (or `normalized_message`) labelled with the task,
+  e.g. `T123456 - Bad $oldContent`.
+- **mediawiki**: all MediaWiki records by level, channel and host.
+
+The entrypoint imports the file with `overwrite=true` in the
+background and makes the `logstash-*` index pattern and Home the
+defaults. So the image, not the OpenSearch volume, defines these
+objects: edits to them in the UI are lost on the next start, while
+other saved objects stay. To change them, edit in the UI, export, and
+replace the file:
+
+```bash
+curl -s -XPOST http://127.0.0.1:5601/api/saved_objects/_export -H 'osd-xsrf: true' -H 'Content-Type: application/json' -d '{"objects":[{"type":"dashboard","id":"home"},{"type":"dashboard","id":"mediawiki"},{"type":"dashboard","id":"mediawiki-errors"},{"type":"dashboard","id":"mediawiki-new-errors"}],"includeReferencesDeep":true,"excludeExportDetails":true}' > dashboards/mediawiki.ndjson
 ```
 
 ## Wikimedia's template and filters
