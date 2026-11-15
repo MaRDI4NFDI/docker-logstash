@@ -40,6 +40,32 @@ MediaWiki ──UDP 11514──► logstash ──► OpenSearch (OPENSEARCH_URL
 Logstash keeps no state: its queue is in memory, and all records live
 in OpenSearch.
 
+### Lost UDP records
+
+UDP has no flow control: when Logstash reads too slowly, the kernel
+drops records once the socket buffer is full. On the cluster nodes
+`net.core.rmem_max` is 212992 bytes. A pod cannot raise it: the
+kubelet rejects the sysctl (`SysctlForbidden`), and `/proc/sys` is
+read-only in the container. So the input asks for exactly that much
+(`UDP_RECEIVE_BUFFER_BYTES`), which the kernel doubles to 416 KiB.
+Asking for more only adds a warning; asking for nothing leaves the
+default of 208 KiB. Beyond that, the input queues up to
+`UDP_QUEUE_SIZE` (default 20000) records in memory.
+
+Measured locally with that 416 KiB buffer and 1 KB records, sent for
+10 seconds at an even rate:
+
+| Rate | Queue 2000 | Queue 20000 | 8 MiB buffer |
+|---|---|---|---|
+| 5000/s | none lost | | |
+| 10000/s | 819 of 100000 lost | 85 lost | none lost |
+
+The kernel counts dropped records as `RcvbufErrors` in the pod:
+
+```bash
+kubectl -n production exec deploy/logstash -- grep '^Udp:' /proc/net/snmp
+```
+
 ## Wikimedia's template and filters
 
 `wmf/` holds unchanged copies of Wikimedia's index template and five
